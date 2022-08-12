@@ -1,0 +1,11 @@
+{
+    "presets": [
+        "@babel/preset-env"
+    ],
+    "plugins": [
+        ["../lib/plugin.js", {
+            "type": "module",
+            "functionedPostUpdate": false
+        }]
+    ]
+}

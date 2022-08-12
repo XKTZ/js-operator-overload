@@ -1,0 +1,21 @@
+{
+  "name": "@xktz/js-operator-overload-core",
+  "version": "1.2.0",
+  "description": "The core folder for javascript",
+  "main": "lib/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "babel src/ -d lib/"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.18.10",
+    "@babel/core": "^7.18.10",
+    "@babel/preset-env": "^7.18.10"
+  },
+  "browserslist": [
+    "defaults"
+  ]
+}

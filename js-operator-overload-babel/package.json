@@ -1,0 +1,25 @@
+{
+  "name": "js-operator-overload-babel",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/plugin.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "babel src/ -d lib/",
+    "test": "babel --config-file ./test/babel.test.config.json -d test/lib/ test/src/",
+    "build-and-test": "npm run build & npm run test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.18.10",
+    "@babel/core": "^7.18.10",
+    "@babel/template": "^7.18.10",
+    "@babel/types": "^7.18.10",
+    "@xktz/js-operator-overload-core": "^1.2.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.18.10"
+  }
+}
