@@ -1,33 +1,36 @@
 import {template} from "@babel/core";
+import {supportedBinaryExpressionOperators} from "@xktz/js-operator-overload-core";
+import {supportedUnaryExpressionOperators} from "@xktz/js-operator-overload-core";
+import {supportedUpdateExpressionOperators} from "@xktz/js-operator-overload-core";
 
 const COMMON_JS = "commonjs";
 const MODULE = "module";
 
-const requireCore = template(`
+const requireCoreTemplate = template(`
 const OPERATORS = require("@xktz/js-operator-overload-core");
 `);
 
-const importCore = template(`
+const importCoreTemplate = template(`
 import * as OPERATORS from "@xktz/js-operator-overload-core";
 `);
 
-const unaryExpression = template(`
+const unaryExpressionTemplate = template(`
 OPERATORS.executeUnaryExpression(OPERATOR, VARIABLE)
 `);
 
-const prefixUpdateExpression = template(`
+const prefixUpdateExpressionTemplate = template(`
 VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE)
 `);
 
-const commaOperatorPostUpdateExpression = template(`
-(TEMPORARY = VARIABLE, TEMPORARY = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE), TEMPORARY)
+const commaOperatorPostUpdateExpressionTemplate = template(`
+(TEMPORARY = VARIABLE, VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE), TEMPORARY)
 `);
 
-const functionPostUpdateExpression = template(`
+const functionPostUpdateExpressionTemplate = template(`
 (() => {let _temporary = VARIABLE; VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE); return _temporary;})()
 `);
 
-const binaryExpression = template(`
+const binaryExpressionTemplate = template(`
 OPERATORS.executeBinaryExpression(OPERATOR, LEFT, RIGHT);
 `);
 
@@ -39,7 +42,7 @@ const preStatements = [];
 
 const PreStatement = (statementGenerator) => {
     preStatements.push(statementGenerator);
-}
+};
 
 PreStatement((path, variables, {type}) => {
     variables.core = path.scope.generateUidIdentifier("_OperatorCore");
@@ -49,12 +52,12 @@ PreStatement((path, variables, {type}) => {
         case undefined:
         case null:
         case COMMON_JS:
-            importStmt = requireCore({
+            importStmt = requireCoreTemplate({
                 OPERATORS: variables.core
             });
             break;
         case MODULE:
-            importStmt = importCore({
+            importStmt = importCoreTemplate({
                 OPERATORS: variables.core
             })
             break;
@@ -98,17 +101,17 @@ export default ({types: t}) => {
             UnaryExpression(path) {
                 // get the argument and operator of the expression
                 const {argument: variable, operator: originOperator} = path.node;
+                // if it is not defined operator, not consider it
                 const operator = {
                     '+': 'positive',
                     '-': 'negative',
                     '~': '~'
                 }[originOperator];
-                // if it is not defined operator, not consider it
-                if (operator === undefined) {
+                if (operator === undefined || !supportedUpdateExpressionOperators.has(operator)) {
                     return;
                 }
                 // replace it with unary expression
-                path.replaceWith(unaryExpression({
+                path.replaceWith(unaryExpressionTemplate({
                     OPERATORS: variables.core,
                     OPERATOR: t.StringLiteral(operator),
                     VARIABLE: variable
@@ -118,12 +121,16 @@ export default ({types: t}) => {
                 // get the operator, variable, and check if it is prefix
                 const {operator, prefix, argument: variable} = path.node;
 
+                if (!supportedUpdateExpressionOperators.has(operator)) {
+                    return;
+                }
+
                 let statement;
 
                 // check if it is prefix
                 // if it is prefix, then use prefix option
                 if (prefix) {
-                    statement = prefixUpdateExpression({
+                    statement = prefixUpdateExpressionTemplate({
                         OPERATORS: variables.core,
                         OPERATOR: t.StringLiteral(operator),
                         VARIABLE: variable
@@ -132,7 +139,7 @@ export default ({types: t}) => {
                     // if it is post, there are two options, the option is to expand post update into function
                     // then use function mode
                     if (options.expandPostUpdateToFunction) {
-                        statement = functionPostUpdateExpression({
+                        statement = functionPostUpdateExpressionTemplate({
                             OPERATORS: variables.core,
                             OPERATOR: t.StringLiteral(operator),
                             VARIABLE: variable
@@ -140,7 +147,7 @@ export default ({types: t}) => {
                     }
                     // if it does not expand post update to function, use the temporary + comma operator option
                     else {
-                        statement = commaOperatorPostUpdateExpression({
+                        statement = commaOperatorPostUpdateExpressionTemplate({
                             OPERATORS: variables.core,
                             OPERATOR: t.StringLiteral(operator),
                             VARIABLE: variable,
@@ -152,9 +159,17 @@ export default ({types: t}) => {
             },
             BinaryExpression(path, state) {
                 const {operator, left, right} = path.node;
-                path.replaceWith({
 
-                });
+                if (!supportedBinaryExpressionOperators.has(operator)) {
+                    return;
+                }
+
+                path.replaceWith(binaryExpressionTemplate({
+                    OPERATORS: variables.core,
+                    OPERATOR: t.StringLiteral(operator),
+                    LEFT: left,
+                    RIGHT: right
+                }));
             }
         }
     }

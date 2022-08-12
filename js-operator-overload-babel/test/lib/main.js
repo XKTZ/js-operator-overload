@@ -1,6 +1,6 @@
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = _OperatorCore.executeBinaryExpression("==", "function", typeof Symbol) && _OperatorCore.executeBinaryExpression("==", "symbol", typeof Symbol.iterator) ? function (obj) { return typeof obj; } : function (obj) { return obj && _OperatorCore.executeBinaryExpression("==", "function", typeof Symbol) && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
 var _OperatorCore = _interopRequireWildcard(require("@xktz/js-operator-overload-core"));
 
@@ -12,9 +12,10 @@ var _temporary;
 
 var a = 1;
 var b = 2;
-
-var c = _OperatorCore.executeUnaryExpression("negative", a);
+var c = -a;
 
 var d = a = _OperatorCore.executeUpdateExpression("++", a);
 
-var e = (_temporary = a, _temporary = _OperatorCore.executeUpdateExpression("++", a), _temporary);
+var e = (_temporary = a, a = _OperatorCore.executeUpdateExpression("++", a), _temporary);
+
+var f = _OperatorCore.executeBinaryExpression("+", a, b);

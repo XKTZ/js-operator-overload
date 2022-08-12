@@ -7,16 +7,17 @@ exports["default"] = void 0;
 
 var _core = require("@babel/core");
 
-var _fs = require("@babel/core/lib/gensync-utils/fs");
+var _jsOperatorOverloadCore = require("@xktz/js-operator-overload-core");
 
 var COMMON_JS = "commonjs";
 var MODULE = "module";
 var requireCoreTemplate = (0, _core.template)("\nconst OPERATORS = require(\"@xktz/js-operator-overload-core\");\n");
 var importCoreTemplate = (0, _core.template)("\nimport * as OPERATORS from \"@xktz/js-operator-overload-core\";\n");
 var unaryExpressionTemplate = (0, _core.template)("\nOPERATORS.executeUnaryExpression(OPERATOR, VARIABLE)\n");
-var prefixUpdateExpression = (0, _core.template)("\nVARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE)\n");
-var commaOperatorPostUpdateExpression = (0, _core.template)("\n(TEMPORARY = VARIABLE, TEMPORARY = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE), TEMPORARY)\n");
-var functionPostUpdateExpression = (0, _core.template)("\n(() => {let _temporary = VARIABLE; VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE); return _temporary;})()\n");
+var prefixUpdateExpressionTemplate = (0, _core.template)("\nVARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE)\n");
+var commaOperatorPostUpdateExpressionTemplate = (0, _core.template)("\n(TEMPORARY = VARIABLE, VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE), TEMPORARY)\n");
+var functionPostUpdateExpressionTemplate = (0, _core.template)("\n(() => {let _temporary = VARIABLE; VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE); return _temporary;})()\n");
+var binaryExpressionTemplate = (0, _core.template)("\nOPERATORS.executeBinaryExpression(OPERATOR, LEFT, RIGHT);\n");
 /**
  * The statement list, containing all statements need to be executed at the BEGINNING of the file
  * @type {{}}
@@ -90,18 +91,21 @@ var _default = function _default(_ref3) {
         }
       },
       UnaryExpression: function UnaryExpression(path) {
+        // get the argument and operator of the expression
         var _path$node = path.node,
             variable = _path$node.argument,
-            originOperator = _path$node.operator;
+            originOperator = _path$node.operator; // if it is not defined operator, not consider it
+
         var operator = {
           '+': 'positive',
           '-': 'negative',
           '~': '~'
         }[originOperator];
 
-        if (operator === undefined) {
+        if (operator === undefined || !_jsOperatorOverloadCore.supportedUpdateExpressionOperators.has(operator)) {
           return;
-        }
+        } // replace it with unary expression
+
 
         path.replaceWith(unaryExpressionTemplate({
           OPERATORS: variables.core,
@@ -110,27 +114,37 @@ var _default = function _default(_ref3) {
         }));
       },
       UpdateExpression: function UpdateExpression(path) {
+        // get the operator, variable, and check if it is prefix
         var _path$node2 = path.node,
             operator = _path$node2.operator,
             prefix = _path$node2.prefix,
             variable = _path$node2.argument;
-        var statement;
+
+        if (!_jsOperatorOverloadCore.supportedUpdateExpressionOperators.has(operator)) {
+          return;
+        }
+
+        var statement; // check if it is prefix
+        // if it is prefix, then use prefix option
 
         if (prefix) {
-          statement = prefixUpdateExpression({
+          statement = prefixUpdateExpressionTemplate({
             OPERATORS: variables.core,
             OPERATOR: t.StringLiteral(operator),
             VARIABLE: variable
           });
         } else {
+          // if it is post, there are two options, the option is to expand post update into function
+          // then use function mode
           if (options.expandPostUpdateToFunction) {
-            statement = functionPostUpdateExpression({
+            statement = functionPostUpdateExpressionTemplate({
               OPERATORS: variables.core,
               OPERATOR: t.StringLiteral(operator),
               VARIABLE: variable
             });
-          } else {
-            statement = commaOperatorPostUpdateExpression({
+          } // if it does not expand post update to function, use the temporary + comma operator option
+          else {
+            statement = commaOperatorPostUpdateExpressionTemplate({
               OPERATORS: variables.core,
               OPERATOR: t.StringLiteral(operator),
               VARIABLE: variable,
@@ -140,6 +154,23 @@ var _default = function _default(_ref3) {
         }
 
         path.replaceWith(statement);
+      },
+      BinaryExpression: function BinaryExpression(path, state) {
+        var _path$node3 = path.node,
+            operator = _path$node3.operator,
+            left = _path$node3.left,
+            right = _path$node3.right;
+
+        if (!_jsOperatorOverloadCore.supportedBinaryExpressionOperators.has(operator)) {
+          return;
+        }
+
+        path.replaceWith(binaryExpressionTemplate({
+          OPERATORS: variables.core,
+          OPERATOR: t.StringLiteral(operator),
+          LEFT: left,
+          RIGHT: right
+        }));
       }
     }
   };

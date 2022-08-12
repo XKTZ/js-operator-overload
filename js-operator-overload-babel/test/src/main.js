@@ -4,3 +4,5 @@ let c = -a;
 
 let d = ++a;
 let e = a++;
+
+let f = a + b;
