@@ -2,6 +2,8 @@ const {isNull, notNull} = require('./Util');
 
 const operatorFunctions = new Map();
 
+export const supportedUnaryExpressionOperators = new Set();
+
 const UnaryExpression = (operator, defaults) => {
     const op = Symbol.for(operator);
     const func = (a) => {
@@ -12,6 +14,7 @@ const UnaryExpression = (operator, defaults) => {
         }
     }
     operatorFunctions[operator] = func;
+    supportedUnaryExpressionOperators.add(operator);
     return func;
 }
 

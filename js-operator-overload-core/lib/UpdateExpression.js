@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.executeUpdateExpression = void 0;
+exports.supportedUpdateExpressionOperators = exports.executeUpdateExpression = void 0;
 
 const {
   isNull,
@@ -11,6 +11,8 @@ const {
 } = require('./Util');
 
 const operatorFunctions = new Map();
+const supportedUpdateExpressionOperators = new Set();
+exports.supportedUpdateExpressionOperators = supportedUpdateExpressionOperators;
 
 const UpdateExpression = (operator, defaults) => {
   const op = Symbol.for(operator);
@@ -24,6 +26,7 @@ const UpdateExpression = (operator, defaults) => {
   };
 
   operatorFunctions[operator] = func;
+  supportedUpdateExpressionOperators.add(operator);
   return func;
 };
 

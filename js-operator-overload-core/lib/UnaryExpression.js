@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.executeUnaryExpression = void 0;
+exports.supportedUnaryExpressionOperators = exports.executeUnaryExpression = void 0;
 
 const {
   isNull,
@@ -11,6 +11,8 @@ const {
 } = require('./Util');
 
 const operatorFunctions = new Map();
+const supportedUnaryExpressionOperators = new Set();
+exports.supportedUnaryExpressionOperators = supportedUnaryExpressionOperators;
 
 const UnaryExpression = (operator, defaults) => {
   const op = Symbol.for(operator);
@@ -24,6 +26,7 @@ const UnaryExpression = (operator, defaults) => {
   };
 
   operatorFunctions[operator] = func;
+  supportedUnaryExpressionOperators.add(operator);
   return func;
 };
 

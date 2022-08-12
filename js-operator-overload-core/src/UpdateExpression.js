@@ -2,6 +2,8 @@ const {isNull, notNull} = require('./Util');
 
 const operatorFunctions = new Map();
 
+export const supportedUpdateExpressionOperators = new Set();
+
 const UpdateExpression = (operator, defaults) => {
     const op = Symbol.for(operator);
     const func = (a) => {
@@ -12,6 +14,7 @@ const UpdateExpression = (operator, defaults) => {
         }
     }
     operatorFunctions[operator] = func;
+    supportedUpdateExpressionOperators.add(operator);
     return func;
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@xktz/js-operator-overload-core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "The core folder for javascript",
   "main": "lib/index.js",
   "type": "commonjs",

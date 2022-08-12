@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.executeBinaryExpression = void 0;
+exports.supportedBinaryExpressionOperators = exports.executeBinaryExpression = void 0;
 
 const {
   isNull,
@@ -11,6 +11,8 @@ const {
 } = require('./Util');
 
 const operatorFunctions = new Map();
+const supportedBinaryExpressionOperators = new Set();
+exports.supportedBinaryExpressionOperators = supportedBinaryExpressionOperators;
 
 const BinaryExpression = (operator, defaults) => {
   const op = Symbol.for(operator);
@@ -24,6 +26,7 @@ const BinaryExpression = (operator, defaults) => {
   };
 
   operatorFunctions[operator] = func;
+  supportedBinaryExpressionOperators.add(operator);
   return func;
 };
 

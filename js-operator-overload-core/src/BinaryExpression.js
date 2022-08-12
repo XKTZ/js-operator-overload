@@ -2,6 +2,8 @@ const {isNull, notNull} = require('./Util');
 
 const operatorFunctions = new Map();
 
+export const supportedBinaryExpressionOperators = new Set();
+
 const BinaryExpression = (operator, defaults) => {
     const op = Symbol.for(operator);
     const func = (a, b) => {
@@ -12,6 +14,7 @@ const BinaryExpression = (operator, defaults) => {
         }
     }
     operatorFunctions[operator] = func;
+    supportedBinaryExpressionOperators.add(operator);
     return func;
 }
 
