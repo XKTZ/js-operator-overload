@@ -10,12 +10,11 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 
 var _temporary;
 
-var a = 1;
-var b = 2;
-var c = -a;
+Number.prototype[Symbol["for"]("+")] = function (y) {
+  return _OperatorCore.executeBinaryExpression("-", this, y);
+};
 
-var d = a = _OperatorCore.executeUpdateExpression("++", a);
-
-var e = (_temporary = a, a = _OperatorCore.executeUpdateExpression("++", a), _temporary);
-
-var f = _OperatorCore.executeBinaryExpression("+", a, b);
+var x = 3;
+var y = 5;
+var z = (_temporary = x, x = _OperatorCore.executeUpdateExpression("++", x), _temporary);
+console.log(_OperatorCore.executeBinaryExpression("+", x, y));

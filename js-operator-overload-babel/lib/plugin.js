@@ -9,6 +9,18 @@ var _core = require("@babel/core");
 
 var _jsOperatorOverloadCore = require("@xktz/js-operator-overload-core");
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 var COMMON_JS = "commonjs";
 var MODULE = "module";
 var requireCoreTemplate = (0, _core.template)("\nconst OPERATORS = require(\"@xktz/js-operator-overload-core\");\n");
@@ -18,6 +30,7 @@ var prefixUpdateExpressionTemplate = (0, _core.template)("\nVARIABLE = OPERATORS
 var commaOperatorPostUpdateExpressionTemplate = (0, _core.template)("\n(TEMPORARY = VARIABLE, VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE), TEMPORARY)\n");
 var functionPostUpdateExpressionTemplate = (0, _core.template)("\n(() => {let _temporary = VARIABLE; VARIABLE = OPERATORS.executeUpdateExpression(OPERATOR, VARIABLE); return _temporary;})()\n");
 var binaryExpressionTemplate = (0, _core.template)("\nOPERATORS.executeBinaryExpression(OPERATOR, LEFT, RIGHT);\n");
+var assignmentExpressionTemplate = (0, _core.template)("\n(LEFT = OPERATORS.executeBinaryExpression(OPERATOR, LEFT, RIGHT))\n");
 /**
  * The statement list, containing all statements need to be executed at the BEGINNING of the file
  * @type {{}}
@@ -68,6 +81,19 @@ PreStatement(function (path, variables, _ref2) {
   }
 });
 
+var isComparison = function isComparison(x) {
+  return x === "===" || x === "==" || x === ">" || x === "<";
+};
+
+var assignmentOperatorToBinaryOperatorMapper = _toConsumableArray(_jsOperatorOverloadCore.supportedBinaryExpressionOperators) // comparison operator is not assignment operator
+.filter(function (x) {
+  return !isComparison(x);
+}).reduce(function (mp, obj) {
+  // ${op}= to ${op}
+  mp[obj + '='] = obj;
+  return mp;
+}, new Map());
+
 var _default = function _default(_ref3) {
   var t = _ref3.types;
   var options;
@@ -100,7 +126,7 @@ var _default = function _default(_ref3) {
           '+': 'positive',
           '-': 'negative',
           '~': '~'
-        }[originOperator];
+        }[originOperator]; // if it is not in the supported, ignore
 
         if (operator === undefined || !_jsOperatorOverloadCore.supportedUpdateExpressionOperators.has(operator)) {
           return;
@@ -118,7 +144,7 @@ var _default = function _default(_ref3) {
         var _path$node2 = path.node,
             operator = _path$node2.operator,
             prefix = _path$node2.prefix,
-            variable = _path$node2.argument;
+            variable = _path$node2.argument; // if it is not in the supported, ignore
 
         if (!_jsOperatorOverloadCore.supportedUpdateExpressionOperators.has(operator)) {
           return;
@@ -155,11 +181,12 @@ var _default = function _default(_ref3) {
 
         path.replaceWith(statement);
       },
-      BinaryExpression: function BinaryExpression(path, state) {
+      BinaryExpression: function BinaryExpression(path) {
+        // get the operator, left, and right
         var _path$node3 = path.node,
             operator = _path$node3.operator,
             left = _path$node3.left,
-            right = _path$node3.right;
+            right = _path$node3.right; // if it is not in the supported, ignore
 
         if (!_jsOperatorOverloadCore.supportedBinaryExpressionOperators.has(operator)) {
           return;
@@ -168,6 +195,27 @@ var _default = function _default(_ref3) {
         path.replaceWith(binaryExpressionTemplate({
           OPERATORS: variables.core,
           OPERATOR: t.StringLiteral(operator),
+          LEFT: left,
+          RIGHT: right
+        }));
+      },
+      AssignmentExpression: function AssignmentExpression(path) {
+        // get operator, left, and right
+        var _path$node4 = path.node,
+            operator = _path$node4.operator,
+            left = _path$node4.left,
+            right = _path$node4.right; // check if the assignment expression in binary form
+
+        var operatorBinary = assignmentOperatorToBinaryOperatorMapper[operator]; // if it is not supported in binary form, not consider it
+
+        if (operatorBinary === undefined || !_jsOperatorOverloadCore.supportedBinaryExpressionOperators.has(operatorBinary)) {
+          return;
+        } // replace it with assignment template
+
+
+        path.replaceWith(assignmentExpressionTemplate({
+          OPERATORS: variables.core,
+          OPERATOR: t.StringLiteral(operatorBinary),
           LEFT: left,
           RIGHT: right
         }));

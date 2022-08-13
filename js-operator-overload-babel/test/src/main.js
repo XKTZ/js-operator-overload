@@ -1,8 +1,9 @@
-let a = 1;
-let b = 2;
-let c = -a;
+Number.prototype[Symbol.for("+")] = function (y) {
+    return this - y;
+}
 
-let d = ++a;
-let e = a++;
+let x = 3;
+let y = 5;
+let z = x ++;
 
-let f = a + b;
+console.log(x + y);
